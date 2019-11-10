@@ -1,7 +1,6 @@
 import socketserver
 import base64
 import hashlib
-import threading
 
 GUID_STR = b"258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
 
@@ -23,17 +22,26 @@ class WebSocketServer(socketserver.ThreadingMixIn, socketserver.BaseRequestHandl
             # Connection is open, receiving all incoming frames
             while True:
                 recv_data = self.request.recv(1024).strip()
+                print("received data: ", recv_data)
                 payload, opcode_and_fin = self.decode_frame(bytearray(recv_data))
                 fin = opcode_and_fin >> 7
                 opcode = opcode_and_fin & 15
+                print("opcode: ", opcode)
                 
                 # opcode = 1 denotes a text frame
                 if (opcode == 1):
                     decoded_payload = payload.decode('utf-8').split(" ")
+                    print("decoded payload: ", decoded_payload)
                     if (decoded_payload[0] == "!echo"):
                         self.send_frame(decoded_payload[1].encode())
+                    elif (decoded_payload[0] == "!submission"):
+                        with open('a.zip', 'rb') as f:
+                            zip_file = f.read()
+                            self.send_file(zip_file)
+
                 # opcode = 9 denotes a ping, send a pong back
                 elif (opcode == 9):
+                    print("ping")
                     self.send_pong(payload)
                 # opcode = 8 denotes a connection close
                 elif (opcode == 8):
@@ -61,11 +69,15 @@ class WebSocketServer(socketserver.ThreadingMixIn, socketserver.BaseRequestHandl
     # Decoding message within frame received
     def decode_frame(self, frame):
         opcode_and_fin = frame[0]
-
+        print("opcode n fin in decode: ", opcode_and_fin)
         payload_len = frame[1]-128
+        print("payload length: ", payload_len)
 
         mask = frame[2:6]
+        print("mask: ", mask)
         encrypted_payload = frame[6: 6+payload_len]
+
+        print(encrypted_payload)
 
         payload = bytearray([encrypted_payload[i] ^ mask[i%4] for i in range(payload_len)])
 
@@ -79,16 +91,40 @@ class WebSocketServer(socketserver.ThreadingMixIn, socketserver.BaseRequestHandl
 
         frame_to_send = bytearray(frame) + payload
 
-        print(frame_to_send)
+        print("frame to send: ", frame_to_send)
         self.request.sendall(frame_to_send)
 
     # Send pong after ping received to notify that connection is still alive
     def send_pong(self, ping):
-        pong = [129]
+        pong = [138]
+
+        pong += [len(ping)]
+
+        pong_frame = bytearray(pong) + ping
+
+        self.request.sendall(pong_frame)
+        print("pong")
+
+    def send_file(self, file):
+        file_header = [130]
+
+        file_header += [len(file)]
+
+        file_frame = bytearray(file_header) + file
+
+        self.request.sendall(file_frame)
+        print("file sent")
 
     # Close WebSocket server
-    def send_close(self):
-        
+    def send_close(self, payload):
+        close_frame = [136]
+
+        close_frame += [len(payload)]
+
+        frame_to_send = bytearray(close_frame) + payload
+
+        self.request.sendall(frame_to_send)
+        print("close\n")
 
 
 
