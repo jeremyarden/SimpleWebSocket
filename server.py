@@ -108,7 +108,13 @@ class WebSocketServer(socketserver.ThreadingMixIn, socketserver.BaseRequestHandl
     def send_file(self, file):
         file_header = [130]
 
-        file_header += [len(file)]
+        if (len(file) <= 125):
+            file_header += [len(file)]
+        else:
+            if (len(file) <= 65535): # if payload len is 126, it denotes that payload len is the next 2 bytes
+                file_header += [126]
+            elif (len(file) <= 18446744073709551615): # if payload len is 127, it denotes that payload len is the next 8 bytes
+                file_header += [127]
 
         file_frame = bytearray(file_header) + file
 
