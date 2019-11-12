@@ -1,6 +1,7 @@
 import socketserver
 import base64
 import hashlib
+from struct import *
 
 GUID_STR = b"258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
 
@@ -23,6 +24,8 @@ class WebSocketServer(socketserver.ThreadingMixIn, socketserver.BaseRequestHandl
             while True:
                 recv_data = self.request.recv(1024).strip()
                 print("received data: ", recv_data)
+                # if (len(recv_data) == 0):
+                #     continue
                 payload, opcode_and_fin = self.decode_frame(bytearray(recv_data))
                 fin = opcode_and_fin >> 7
                 opcode = opcode_and_fin & 15
@@ -38,6 +41,7 @@ class WebSocketServer(socketserver.ThreadingMixIn, socketserver.BaseRequestHandl
                         with open('a.zip', 'rb') as f:
                             zip_file = f.read()
                             self.send_file(zip_file)
+                # opcode = 2 denotes a binary file
 
                 # opcode = 9 denotes a ping, send a pong back
                 elif (opcode == 9):
@@ -75,6 +79,7 @@ class WebSocketServer(socketserver.ThreadingMixIn, socketserver.BaseRequestHandl
 
         mask = frame[2:6]
         print("mask: ", mask)
+
         encrypted_payload = frame[6: 6+payload_len]
 
         print(encrypted_payload)
@@ -116,10 +121,9 @@ class WebSocketServer(socketserver.ThreadingMixIn, socketserver.BaseRequestHandl
             elif (len(file) <= 18446744073709551615 and len(file) > 65535): # if payload len is 127, it denotes that payload len is the next 8 bytes
                 file_header += [127]
 
-        file_frame = bytearray(file_header) + file
+        file_frame = bytearray(file_header) + pack('>h', len(file)) + file
 
         self.request.sendall(file_frame)
-        print("file sent")
 
     # Close WebSocket server
     def send_close(self, payload):
@@ -132,6 +136,7 @@ class WebSocketServer(socketserver.ThreadingMixIn, socketserver.BaseRequestHandl
         self.request.sendall(frame_to_send)
         print("close\n")
 
+    def verify_hash(self, file):
 
 
     
