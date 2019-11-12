@@ -19,7 +19,7 @@ Jeremy Arden Hartono 13517101
 5. Ketikkan command untuk menjalankan server
 
 ``python3 server.py``
-6. 
+ 
 
 ## Pembagian Kerja
 
