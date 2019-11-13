@@ -41,7 +41,19 @@ class WebSocketServer(socketserver.ThreadingMixIn, socketserver.BaseRequestHandl
                         with open('a.zip', 'rb') as f:
                             zip_file = f.read()
                             self.send_file(zip_file)
+
                 # opcode = 2 denotes a binary file
+                elif (opcode == 2):
+                    file_name = "b.zip"
+                    print("Binary file payload: ",payload)
+                    with open(file_name, 'wb') as f:
+                        f.write(payload)
+                    result = self.verify_hash(file_name)
+                    print(result)
+                    if(result == 1):        #Sent md5 and received is the same
+                        self.send_frame(1)
+                    else:
+                        self.send_frame(0)
 
                 # opcode = 9 denotes a ping, send a pong back
                 elif (opcode == 9):
@@ -137,9 +149,22 @@ class WebSocketServer(socketserver.ThreadingMixIn, socketserver.BaseRequestHandl
         print("close\n")
 
     def verify_hash(self, file):
+        #calcuate our zipfile md5
+                    file_name = 'a.zip'
+                    with open(file_name) as file_to_check:
+                        data = file_to_check.read()
+                        md5_oriFile = hashlib.md5(data).hexdigest()
+                    print("original md5:", md5_oriFile)
+                    with open(file) as file_recv:
+                        data = file_recv
+                        md5_recvFile = hashlib.md5(data).hexdigest()
+                    print("Received md5: ",md5_recvFile)
+                    if(md5_oriFile == md5_recvFile):
+                        return 1
+                    else:
+                        return 0
 
 
-    
 if __name__ == "__main__":
     HOST, PORT = "localhost", 3000
 
