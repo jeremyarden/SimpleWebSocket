@@ -92,26 +92,33 @@ class WebSocketServer(socketserver.ThreadingMixIn, socketserver.BaseRequestHandl
             encrypted_payload = frame[6: 6+payload_len]
 
             print(encrypted_payload)
-
-            payload = bytearray([encrypted_payload[i] ^ mask[i%4] for i in range(payload_len)])
         elif (payload_len == 126):
             print("frame[2:4] big endian: ", int.from_bytes(frame[2:4], byteorder='big'))
-            print("frame[2:4] little endian: ", int.from_bytes(frame[2:4], byteorder='little'))
             payload_len = int.from_bytes(frame[2:4], byteorder='big')
             with open('a.zip', 'rb') as f:
                 data = f.read()
-
-                if (payload_len != len(data)):
+                if (payload_len != len(data)):  #Case when received file is different
                     self.send_frame("0".encode())
+                else:
+                    mask = frame[4:8]
+                    print("mask: ", mask)
+                    encrypted_payload = frame[8: 8+payload_len]
+                    print(encrypted_payload)
+                    
         elif (payload_len == 127):
             print("frame[2:9] big endian: ", int.from_bytes(frame[2:9], byteorder='big'))
-            print("frame[2:9] little endian: ", int.from_bytes(frame[2:9], byteorder='little'))
             payload_len = int.from_bytes(frame[2:9], byteorder='big')
             with open('a.zip', 'rb') as f:
                 data = f.read()
-
                 if (payload_len != len(data)):
                     self.send_frame("0".encode())
+                else:
+                    mask = frame[10:14]
+                    print("mask: ",mask)
+                    encrypted_payload = frame[10: 10+payload_len]
+                    print(encrypted_payload)
+
+        payload = bytearray([encrypted_payload[i] ^ mask[i%4] for i in range(payload_len)])
         return (payload, opcode_and_fin)
 
     # Construct and then send frame
