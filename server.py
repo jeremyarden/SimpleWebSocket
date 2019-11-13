@@ -43,16 +43,11 @@ class WebSocketServer(socketserver.ThreadingMixIn, socketserver.BaseRequestHandl
                             zip_file = f.read()
                             self.send_file(zip_file)
                 # opcode = 2 denotes a binary file
-                elif (opcode == 2):
-                    file_name = "return.zip"
-                    with open(file_name, 'wb') as f:
-                        f.write(payload)
+                # elif (opcode == 2):
                     
-                    if(self.verify_hash(file_name)):
-                        self.send_frame("1".encode())
-                    else:
-                        self.send_frame("0".encode())
-                    
+
+                #     with open('return.zip', 'wb') as f:
+                #         f.write(payload)
 
                 # opcode = 9 denotes a ping, send a pong back
                 elif (opcode == 9):
@@ -102,22 +97,37 @@ class WebSocketServer(socketserver.ThreadingMixIn, socketserver.BaseRequestHandl
         elif (payload_len == 126):
             print("frame[2:4] big endian: ", int.from_bytes(frame[2:4], byteorder='big'))
             payload_len = int.from_bytes(frame[2:4], byteorder='big')
+            print("len frame: ", len(frame))
             mask = frame[4:8]
-            print("mask: ", mask)
             encrypted_payload = frame[8: 8+payload_len]
-            print(encrypted_payload)
 
-            payload = [encrypted_payload[i] ^ mask[i%4] for i in range(payload_len)]
+            print(encrypted_payload)
+            print("len encrypted: ", len(encrypted_payload))
+
+            with open('a.zip', 'rb') as f:
+                data = f.read()
+
+                if (payload_len != len(data)):
+                    self.send_frame("0".encode())
+
+            payload = []
 
         elif (payload_len == 127):
             print("frame[2:9] big endian: ", int.from_bytes(frame[2:9], byteorder='big'))
             payload_len = int.from_bytes(frame[2:9], byteorder='big')
+
             mask = frame[10:14]
-            print("mask: ",mask)
-            encrypted_payload = frame[10: 10+payload_len]
+            encrypted_payload = frame[14: 14+payload_len]
+
             print(encrypted_payload)
-            payload = [encrypted_payload[i] ^ mask[i%4] for i in range(payload_len)]
-        
+            print("len encrypted: ", len(encrypted_payload))
+            with open('a.zip', 'rb') as f:
+                data = f.read()
+
+                if (payload_len != len(data)):
+                    self.send_frame("0".encode())
+
+            payload = []
         return (payload, opcode_and_fin)
 
     # Construct and then send frame
@@ -168,19 +178,7 @@ class WebSocketServer(socketserver.ThreadingMixIn, socketserver.BaseRequestHandl
         self.request.sendall(frame_to_send)
         print("close\n")
 
-    #Received filename is the input, will output 0 or 1 if input is right or not
-    def verify_hash(self, fName):
-        hashCode = []
-        for filename in ['a.zip',fName]:
-            hasher = hashlib.md5()
-            with open(filename, 'rb') as f:
-                buf = f.read()
-                hasher.update(buf)
-                a = hasher.hexdigest()
-                hashCode.append(a)
-                print("Hash value of file ",filename,": ",a)
-        
-        return hashCode[0] == hashCode[1]
+    # def verify_hash(self, file):
     
 if __name__ == "__main__":
     HOST, PORT = "localhost", 3000
