@@ -22,7 +22,7 @@ class WebSocketServer(socketserver.ThreadingMixIn, socketserver.BaseRequestHandl
 
             # Connection is open, receiving all incoming frames
             while True:
-                recv_data = self.request.recv(1024).strip()
+                recv_data = self.request.recv(8192).strip()
                 print("received data: ", recv_data)
                 # if (len(recv_data) == 0):
                 #     continue

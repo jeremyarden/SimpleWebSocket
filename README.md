@@ -29,9 +29,9 @@ Simple WebSocket server implemented using Python 3
  
 
 ## Pembagian Kerja
-_________________________________________________________________________________
-NIM      | Nama                     | Apa yang dikerjakan | Persentase Kontribusi|
----------|--------------------------|---------------------|----------------------|
-13517005 | Muhammad Rafi Zhafran    | README.md           | x                    |
-13517083 | Abiyyu Avicena Ismunandar| adsadwadsa          | x                    |
-13517101 | Jeremy Arden Hartono     | SEMUANYA BOS        | x                    |
+__________________________________________________________________________________
+NIM      | Nama                     | Apa yang dikerjakan  | Persentase Kontribusi|
+---------|--------------------------|----------------------|----------------------|
+13517005 | Muhammad Rafi Zhafran    | server.py dan readme | 33%                  |
+13517083 | Abiyyu Avicena Ismunandar| server.py dan readme | 33%                  |
+13517101 | Jeremy Arden Hartono     | server.py dan readme | 33%                  |
