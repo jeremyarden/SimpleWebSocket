@@ -30,6 +30,7 @@ class WebSocketServer(socketserver.ThreadingMixIn, socketserver.BaseRequestHandl
                 fin = opcode_and_fin >> 7
                 opcode = opcode_and_fin & 15
                 print("opcode: ", opcode)
+                print("payload: ", payload)
                 
                 # opcode = 1 denotes a text frame
                 if (opcode == 1):
@@ -41,19 +42,12 @@ class WebSocketServer(socketserver.ThreadingMixIn, socketserver.BaseRequestHandl
                         with open('a.zip', 'rb') as f:
                             zip_file = f.read()
                             self.send_file(zip_file)
-
                 # opcode = 2 denotes a binary file
-                elif (opcode == 2):
-                    file_name = "b.zip"
-                    print("Binary file payload: ",payload)
-                    with open(file_name, 'wb') as f:
-                        f.write(payload)
-                    result = self.verify_hash(file_name)
-                    print(result)
-                    if(result == 1):        #Sent md5 and received is the same
-                        self.send_frame(1)
-                    else:
-                        self.send_frame(0)
+                # elif (opcode == 2):
+                    
+
+                #     with open('return.zip', 'wb') as f:
+                #         f.write(payload)
 
                 # opcode = 9 denotes a ping, send a pong back
                 elif (opcode == 9):
@@ -85,19 +79,39 @@ class WebSocketServer(socketserver.ThreadingMixIn, socketserver.BaseRequestHandl
     # Decoding message within frame received
     def decode_frame(self, frame):
         opcode_and_fin = frame[0]
+        print("frame[0]: ", frame[0])
         print("opcode n fin in decode: ", opcode_and_fin)
         payload_len = frame[1]-128
+        print("frame[1]: ", frame[1])
         print("payload length: ", payload_len)
 
-        mask = frame[2:6]
-        print("mask: ", mask)
+        if (payload_len <= 125):
+            mask = frame[2:6]
+            print("mask: ", mask)
 
-        encrypted_payload = frame[6: 6+payload_len]
+            encrypted_payload = frame[6: 6+payload_len]
 
-        print(encrypted_payload)
+            print(encrypted_payload)
 
-        payload = bytearray([encrypted_payload[i] ^ mask[i%4] for i in range(payload_len)])
+            payload = bytearray([encrypted_payload[i] ^ mask[i%4] for i in range(payload_len)])
+        elif (payload_len == 126):
+            print("frame[2:4] big endian: ", int.from_bytes(frame[2:4], byteorder='big'))
+            print("frame[2:4] little endian: ", int.from_bytes(frame[2:4], byteorder='little'))
+            payload_len = int.from_bytes(frame[2:4], byteorder='big')
+            with open('a.zip', 'rb') as f:
+                data = f.read()
 
+                if (payload_len != len(data)):
+                    self.send_frame("0".encode())
+        elif (payload_len == 127):
+            print("frame[2:9] big endian: ", int.from_bytes(frame[2:9], byteorder='big'))
+            print("frame[2:9] little endian: ", int.from_bytes(frame[2:9], byteorder='little'))
+            payload_len = int.from_bytes(frame[2:9], byteorder='big')
+            with open('a.zip', 'rb') as f:
+                data = f.read()
+
+                if (payload_len != len(data)):
+                    self.send_frame("0".encode())
         return (payload, opcode_and_fin)
 
     # Construct and then send frame
@@ -148,23 +162,10 @@ class WebSocketServer(socketserver.ThreadingMixIn, socketserver.BaseRequestHandl
         self.request.sendall(frame_to_send)
         print("close\n")
 
-    def verify_hash(self, file):
-        #calcuate our zipfile md5
-                    file_name = 'a.zip'
-                    with open(file_name) as file_to_check:
-                        data = file_to_check.read()
-                        md5_oriFile = hashlib.md5(data).hexdigest()
-                    print("original md5:", md5_oriFile)
-                    with open(file) as file_recv:
-                        data = file_recv
-                        md5_recvFile = hashlib.md5(data).hexdigest()
-                    print("Received md5: ",md5_recvFile)
-                    if(md5_oriFile == md5_recvFile):
-                        return 1
-                    else:
-                        return 0
+    # def verify_hash(self, file):
 
 
+    
 if __name__ == "__main__":
     HOST, PORT = "localhost", 3000
 
